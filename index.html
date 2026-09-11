@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>📁 精华班会务系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f4f6fa; color: #1a1a2e; padding: 12px; min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .app-container { max-width: 1200px; margin: 0 auto; position: relative; }
+        .header {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            background: #ffffff; border-radius: 16px; padding: 12px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04); margin-bottom: 14px;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .header-left .logo-icon { font-size: 24px; }
+        .header-left .app-title {
+            font-size: 20px; font-weight: 700;
+            background: linear-gradient(135deg, #1a1a2e, #4a4a8a);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            cursor: pointer; user-select: none; border-bottom: 2px dashed transparent; transition: border-color 0.2s;
+        }
+        .header-left .app-title:hover { border-bottom-color: #4a4a8a; }
+        .header-left .badge {
+            background: #eef2ff; color: #4a4a8a; font-size: 11px; font-weight: 600;
+            padding: 2px 12px; border-radius: 30px; -webkit-text-fill-color: #4a4a8a;
+        }
+        .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .search-wrapper { position: relative; display: flex; align-items: center; }
+        .search-wrapper input {
+            padding: 6px 12px 6px 34px; border: 1.5px solid #e2e8f0; border-radius: 40px;
+            font-size: 13px; background: #f8fafc; width: 160px; transition: all 0.25s ease;
+            outline: none; font-family: inherit;
+        }
+        .search-wrapper input:focus {
+            border-color: #7c7cb8; background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(74,74,138,0.08); width: 200px;
+        }
+        .search-wrapper .search-icon {
+            position: absolute; left: 12px; color: #94a3b8; font-size: 14px; pointer-events: none;
+        }
+        .view-toggle { display: flex; gap: 3px; background: #f1f4f9; padding: 3px; border-radius: 30px; }
+        .view-toggle button {
+            border: none; background: transparent; padding: 4px 12px; border-radius: 30px;
+            font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer;
+            transition: all 0.2s ease; font-family: inherit;
+        }
+        .view-toggle button.active { background: #ffffff; color: #1a1a2e; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .action-bar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+            background: #ffffff; border-radius: 14px; padding: 8px 16px;
+            margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.02);
+        }
+        .upload-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .upload-btn {
+            background: #1a1a2e; color: white; border: none; padding: 5px 14px;
+            border-radius: 40px; font-size: 12px; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: background 0.2s; white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 4px; user-select: none;
+        }
+        .upload-btn:hover { background: #2d2d5e; }
+        .upload-btn.folder { background: #4a4a8a; }
+        .upload-btn.folder:hover { background: #5c5c9e; }
+        .upload-btn.download-all { background: #fbbf24; color: #1a1a2e; }
+        .upload-btn.download-all:hover { background: #f59e0b; }
+        .upload-btn.danger { background: #dc2626; }
+        .upload-btn.danger:hover { background: #b91c1c; }
+        .upload-btn.danger.active { background: #16a34a; }
+        .upload-btn.danger.active:hover { background: #15803d; }
+        .auth-btn {
+            background: #eef2ff; color: #4a4a8a; border: none; padding: 4px 14px;
+            border-radius: 40px; font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all 0.2s; margin-left: auto;
+        }
+        .auth-btn:hover { background: #d9e2ff; }
+        .auth-btn.logout { background: #fee2e2; color: #b91c1c; }
+        .auth-btn.logout:hover { background: #fecaca; }
+        .batch-delete-cancel {
+            background: #9ca3af; color: white; border: none; padding: 5px 14px;
+            border-radius: 40px; font-size: 12px; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: background 0.2s; display: none;
+        }
+        .batch-delete-cancel:hover { background: #6b7280; }
+        .show-notice-btn {
+            background: #e8f0fe; color: #1a73e8; border: none; padding: 4px 14px;
+            border-radius: 40px; font-size: 12px; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: background 0.2s; display: none;
+        }
+        .show-notice-btn:hover { background: #d2e3fc; }
+        .notice-area {
+            background: #ffffff; border-radius: 14px; padding: 10px 18px;
+            margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.02);
+            border-left: 4px solid #4a4a8a; display: flex; flex-wrap: wrap;
+            align-items: flex-start; gap: 8px; transition: all 0.3s ease;
+        }
+        .notice-area.hidden { display: none; }
+        .notice-area .notice-icon { font-size: 18px; margin-top: 2px; flex-shrink: 0; }
+        .notice-area .notice-content {
+            flex: 1; font-size: 14px; color: #1a1a2e; line-height: 1.6;
+            word-break: break-word; min-height: 22px;
+        }
+        .notice-area .notice-content .placeholder { color: #94a3b8; font-style: italic; }
+        .notice-area .notice-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+        .notice-area .notice-actions button {
+            border: none; background: #eef2ff; color: #4a4a8a; padding: 3px 12px;
+            border-radius: 30px; font-size: 12px; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: background 0.15s;
+        }
+        .notice-area .notice-actions button:hover { background: #d9e2ff; }
+        .notice-area .notice-actions button.save-notice { background: #4a4a8a; color: white; }
+        .notice-area .notice-actions button.save-notice:hover { background: #3a3a7a; }
+        .notice-area .notice-actions button.close-notice {
+            background: #f1f4f9; color: #64748b; font-size: 16px; padding: 0 8px;
+        }
+        .notice-area .notice-edit {
+            width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0;
+            border-radius: 10px; font-size: 14px; font-family: inherit;
+            resize: vertical; min-height: 50px; outline: none; margin-top: 4px;
+        }
+        .notice-area .notice-edit:focus {
+            border-color: #4a4a8a; box-shadow: 0 0 0 3px rgba(74,74,138,0.08);
+        }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+            background: #ffffff; border-radius: 12px; padding: 6px 16px;
+            margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.02); font-size: 13px;
+        }
+        .breadcrumb span { color: #94a3b8; }
+        .breadcrumb .crumb {
+            color: #1a1a2e; font-weight: 500; cursor: pointer; padding: 2px 6px;
+            border-radius: 6px; transition: background 0.15s;
+        }
+        .breadcrumb .crumb:hover { background: #f1f4f9; }
+        .breadcrumb .crumb.current { color: #4a4a8a; font-weight: 600; cursor: default; }
+        .stats-bar {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            background: #ffffff; border-radius: 12px; padding: 6px 16px;
+            margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.02);
+        }
+        .stats-bar .stats-left {
+            display: flex; align-items: center; gap: 14px; font-size: 12px; color: #475569;
+        }
+        .stats-bar .stats-left span { display: flex; align-items: center; gap: 4px; }
+        .stats-bar .stats-left .num { font-weight: 700; color: #1a1a2e; }
+        .filter-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+        .filter-tabs .tab {
+            padding: 3px 12px; border-radius: 30px; font-size: 11px; font-weight: 500;
+            border: none; background: #f1f4f9; color: #475569; cursor: pointer;
+            transition: all 0.2s ease; font-family: inherit; white-space: nowrap;
+        }
+        .filter-tabs .tab:hover { background: #e2e8f0; }
+        .filter-tabs .tab.active {
+            background: #1a1a2e; color: #ffffff; box-shadow: 0 2px 8px rgba(26,26,46,0.15);
+        }
+        .file-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 14px; transition: all 0.3s ease;
+        }
+        .file-grid.list-view { grid-template-columns: 1fr; gap: 6px; }
+        .file-card {
+            background: #ffffff; border-radius: 14px; padding: 14px 12px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: all 0.25s ease;
+            border: 1px solid rgba(0,0,0,0.02); cursor: pointer; display: flex;
+            flex-direction: column; align-items: flex-start; position: relative;
+        }
+        .file-card:hover {
+            transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            border-color: #e2e8f0;
+        }
+        .file-card:active { transform: scale(0.98); }
+        .file-card .checkbox-wrapper {
+            position: absolute; top: 6px; left: 6px; z-index: 5;
+            pointer-events: auto; display: none;
+        }
+        .file-card .checkbox-wrapper input[type="checkbox"] {
+            width: 16px; height: 16px; cursor: pointer;
+            accent-color: #4a4a8a; border-radius: 4px;
+        }
+        .batch-mode .file-card .checkbox-wrapper { display: block; }
+        .file-thumb {
+            width: 100%; height: 100px; background: #f8fafc; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 6px; overflow: hidden; flex-shrink: 0;
+            pointer-events: none; margin-top: 6px;
+        }
+        .file-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .file-thumb .file-icon { font-size: 40px; line-height: 1; }
+        .file-thumb .folder-icon { font-size: 48px; line-height: 1; color: #fbbf24; }
+        .file-card .file-name {
+            font-weight: 600; font-size: 13px; color: #1a1a2e;
+            word-break: break-word; line-height: 1.3; margin-bottom: 2px; width: 100%;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; pointer-events: none;
+        }
+        .file-card .file-meta {
+            font-size: 10px; color: #94a3b8; display: flex; flex-wrap: wrap;
+            gap: 4px 10px; margin-top: 2px; width: 100%; pointer-events: none;
+        }
+        .file-card .file-meta .tag {
+            background: #f1f4f9; padding: 0px 8px; border-radius: 20px;
+            font-size: 9px; color: #475569; font-weight: 500;
+        }
+        .file-card .file-actions {
+            margin-top: 8px; display: flex; gap: 4px; width: 100%;
+            border-top: 1px solid #f1f4f9; padding-top: 8px;
+            flex-wrap: wrap; pointer-events: auto;
+        }
+        .file-card .file-actions button {
+            border: none; background: #f8fafc; padding: 3px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 500;
+            color: #475569; cursor: pointer; transition: all 0.15s ease;
+            font-family: inherit; flex: 1; min-width: 44px;
+        }
+        .file-card .file-actions button:hover { background: #eef2ff; color: #4a4a8a; }
+        .file-card .file-actions button.download { background: #1a1a2e; color: #ffffff; }
+        .file-card .file-actions button.download:hover { background: #2d2d5e; }
+        .file-card .file-actions button.delete { background: #fee2e2; color: #b91c1c; }
+        .file-card .file-actions button.delete:hover { background: #fecaca; }
+        .file-card .file-actions button.open-folder { background: #e0f2fe; color: #0369a1; }
+        .file-card .file-actions button.open-folder:hover { background: #bae6fd; }
+        .file-card .file-actions button.folder-download { background: #fef3c7; color: #92400e; }
+        .file-card .file-actions button.folder-download:hover { background: #fde68a; }
+        .file-card.folder-card { border-left: 3px solid #fbbf24; }
+        .file-grid.list-view .file-card {
+            flex-direction: row; align-items: center; padding: 10px 16px;
+            gap: 10px; flex-wrap: wrap;
+        }
+        .file-grid.list-view .file-card .checkbox-wrapper {
+            position: static; margin-right: 4px; display: none;
+        }
+        .batch-mode .file-grid.list-view .file-card .checkbox-wrapper { display: block; }
+        .file-grid.list-view .file-card .file-thumb {
+            width: 48px; height: 48px; margin-bottom: 0;
+            flex-shrink: 0; border-radius: 8px; margin-top: 0;
+        }
+        .file-grid.list-view .file-card .file-thumb .file-icon { font-size: 28px; }
+        .file-grid.list-view .file-card .file-thumb .folder-icon { font-size: 32px; }
+        .file-grid.list-view .file-card .file-name {
+            font-size: 13px; flex: 1; min-width: 100px; -webkit-line-clamp: 1;
+        }
+        .file-grid.list-view .file-card .file-meta {
+            margin-top: 0; flex: 0 1 auto; gap: 4px 12px;
+        }
+        .file-grid.list-view .file-card .file-actions {
+            margin-top: 0; border-top: none; padding-top: 0;
+            width: auto; flex-shrink: 0;
+        }
+        .empty-state {
+            grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8;
+        }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #1a1a2e; color: white; padding: 8px 20px; border-radius: 40px;
+            font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); opacity: 0;
+            transition: opacity 0.4s ease; pointer-events: none; z-index: 999;
+            max-width: 90%; text-align: center;
+        }
+        .toast.show { opacity: 1; }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); z-index: 1000; display: none;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            position: relative; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .modal-close {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 30px;
+            padding: 6px 18px; font-size: 15px; font-weight: 500;
+            color: #ffffff; cursor: pointer; z-index: 20;
+            font-family: inherit; transition: background 0.2s;
+        }
+        .modal-close:hover { background: rgba(255,255,255,0.25); }
+        .modal-body {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 100%; padding: 20px;
+        }
+        .modal-body img { max-width: 100%; max-height: 90vh; object-fit: contain; }
+        .modal-body .preview-text {
+            width: 100%; max-width: 700px; background: rgba(255,255,255,0.95);
+            border-radius: 16px; padding: 20px; font-family: 'Courier New', monospace;
+            font-size: 13px; white-space: pre-wrap; word-break: break-all;
+            max-height: 80vh; overflow: auto; color: #1a1a2e;
+        }
+        .modal-body .preview-info {
+            text-align: center; color: rgba(255,255,255,0.8); padding: 20px; font-size: 15px;
+        }
+        .modal-body .preview-info .big-icon { font-size: 64px; margin-bottom: 12px; }
+        .modal-body .preview-info .filename { font-weight: 600; color: #ffffff; }
+        .modal-footer {
+            position: absolute; bottom: 30px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 12px;
+            padding: 0 20px; z-index: 15;
+        }
+        .modal-footer .upload-btn {
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(4px);
+            color: #ffffff; border: 1px solid rgba(255,255,255,0.15);
+            padding: 6px 24px; border-radius: 40px; font-size: 14px;
+            font-weight: 500; cursor: pointer; font-family: inherit;
+            transition: background 0.2s;
+        }
+        .modal-footer .upload-btn:hover { background: rgba(255,255,255,0.35); }
+        .auth-modal .modal-content {
+            background: #ffffff; max-width: 380px; max-height: 90%;
+            padding: 24px; border-radius: 24px; width: 100%; height: auto;
+        }
+        .auth-modal .modal-close {
+            position: static; background: #f1f4f9; color: #1a1a2e;
+            border: none; padding: 4px 14px; align-self: flex-end; margin-bottom: 10px;
+        }
+        .auth-modal .modal-body {
+            padding: 12px 0; height: auto; overflow: visible; display: block;
+        }
+        .auth-modal input {
+            width: 100%; padding: 8px 16px; border: 1.5px solid #e2e8f0;
+            border-radius: 40px; font-size: 14px; outline: none;
+            font-family: inherit; margin-top: 6px;
+        }
+        .auth-modal input:focus {
+            border-color: #4a4a8a; box-shadow: 0 0 0 3px rgba(74,74,138,0.08);
+        }
+        .auth-modal .auth-error { color: #b91c1c; font-size: 13px; margin-top: 6px; }
+        .auth-modal .upload-btn { width: 100%; margin-top: 10px; }
+        .contact-float-btn {
+            position: fixed; bottom: 24px; right: 24px; background: #4a4a8a;
+            color: white; border: none; border-radius: 40px; padding: 10px 22px;
+            font-size: 15px; font-weight: 500; box-shadow: 0 4px 16px rgba(74,74,138,0.35);
+            cursor: pointer; z-index: 500; display: flex; align-items: center;
+            gap: 6px; transition: transform 0.2s, background 0.2s; white-space: nowrap;
+        }
+        .contact-float-btn:hover { transform: scale(1.05); background: #3a3a7a; }
+        .contact-float-btn:active { transform: scale(0.95); }
+        .contact-modal .modal-content {
+            background: #ffffff; max-width: 460px; max-height: 90%;
+            padding: 24px; border-radius: 24px; width: 100%; height: auto;
+        }
+        .contact-modal .modal-close {
+            position: static; background: #f1f4f9; color: #1a1a2e;
+            border: none; padding: 4px 14px; align-self: flex-end; margin-bottom: 10px;
+        }
+        .contact-modal .modal-body {
+            padding: 12px 0; height: auto; overflow: visible;
+            display: block; text-align: center;
+        }
+        .contact-modal .modal-body .contact-content {
+            font-size: 15px; line-height: 1.8; color: #1a1a2e;
+            white-space: pre-wrap; word-break: break-word;
+        }
+        .contact-modal .modal-body .contact-content .placeholder {
+            color: #94a3b8; font-style: italic;
+        }
+        .contact-modal .modal-body .contact-edit {
+            width: 100%; padding: 8px 14px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; font-size: 14px; font-family: inherit;
+            resize: vertical; min-height: 80px; outline: none; margin-top: 8px;
+        }
+        .contact-modal .modal-body .contact-edit:focus {
+            border-color: #4a4a8a; box-shadow: 0 0 0 3px rgba(74,74,138,0.08);
+        }
+        .contact-modal .modal-footer {
+            position: static; padding: 14px 0 0; border-top: 1px solid #f1f4f9;
+            margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px;
+        }
+        .contact-modal .modal-footer .upload-btn {
+            background: #4a4a8a; color: white; border: none; padding: 5px 20px;
+            border-radius: 40px; font-size: 13px; font-weight: 500;
+            cursor: pointer; font-family: inherit; transition: background 0.2s;
+        }
+        .contact-modal .modal-footer .upload-btn:hover { background: #3a3a7a; }
+        .contact-modal .modal-footer .upload-btn.secondary {
+            background: #f1f4f9; color: #475569;
+        }
+        .contact-modal .modal-footer .upload-btn.secondary:hover { background: #e2e8f0; }
+        .upload-progress {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #1a1a2e; color: white; padding: 12px 24px;
+            border-radius: 40px; font-size: 14px; z-index: 2000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: none;
+            min-width: 280px; text-align: center;
+        }
+        .upload-progress.show { display: block; }
+        .upload-progress .bar {
+            margin-top: 8px; height: 6px; background: rgba(255,255,255,0.2);
+            border-radius: 10px; overflow: hidden;
+        }
+        .upload-progress .bar-inner {
+            height: 100%; background: #4a4a8a; width: 0%; transition: width 0.3s;
+        }
+        @media (max-width: 768px) {
+            body { padding: 8px; }
+            .header { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 16px; }
+            .header-left .app-title { font-size: 18px; }
+            .search-wrapper input { width: 100%; }
+            .search-wrapper input:focus { width: 100%; }
+            .stats-bar { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 14px; }
+            .stats-bar .stats-left { flex-wrap: wrap; gap: 6px; font-size: 11px; }
+            .filter-tabs { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+            .filter-tabs .tab { flex: 0 0 auto; font-size: 10px; padding: 2px 10px; }
+            .file-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+            .file-grid.list-view .file-card { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .file-grid.list-view .file-card .file-actions { width: 100%; border-top: 1px solid #f1f4f9; padding-top: 6px; }
+            .upload-btn { font-size: 11px; padding: 4px 12px; }
+            .action-bar { padding: 6px 12px; }
+            .modal-close { top: 12px; right: 12px; padding: 4px 14px; font-size: 14px; }
+            .modal-footer { bottom: 20px; }
+            .modal-footer .upload-btn { padding: 5px 18px; font-size: 13px; }
+            .contact-float-btn { padding: 8px 16px; font-size: 13px; bottom: 16px; right: 16px; }
+            .notice-area { padding: 8px 14px; }
+        }
+        @media (max-width: 480px) {
+            .file-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .file-card { padding: 10px 8px; }
+            .file-thumb { height: 70px; margin-top: 4px; }
+            .file-thumb .file-icon { font-size: 28px; }
+            .file-thumb .folder-icon { font-size: 32px; }
+            .file-card .file-name { font-size: 11px; }
+            .file-card .file-actions button { font-size: 10px; padding: 2px 6px; min-width: 36px; }
+            .file-card .checkbox-wrapper { top: 4px; left: 4px; }
+            .file-card .checkbox-wrapper input[type="checkbox"] { width: 14px; height: 14px; }
+            .contact-float-btn { padding: 6px 14px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-left">
+                <span class="logo-icon">📁</span>
+                <span class="app-title" id="appTitle" title="点击修改名称">精华班会务系统</span>
+                <span class="badge" id="roleBadge">访客</span>
+            </div>
+            <div class="header-actions">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="搜索...">
+                </div>
+                <div class="view-toggle">
+                    <button id="gridViewBtn" class="active" title="网格">▦ 网格</button>
+                    <button id="listViewBtn" title="列表">☰ 列表</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="action-bar">
+            <div class="upload-group" id="adminUploadGroup" style="display:none;">
+                <label class="upload-btn" style="cursor:pointer;">
+                    ⬆ 上传文件
+                    <input type="file" id="fileUpload" multiple style="display:none;">
+                </label>
+                <label class="upload-btn folder" style="cursor:pointer;">
+                    📁 上传文件夹
+                    <input type="file" id="folderUpload" webkitdirectory multiple style="display:none;">
+                </label>
+            </div>
+            <button class="upload-btn download-all" id="downloadAllBtn">📦 下载全部</button>
+            <button class="upload-btn danger" id="batchDeleteBtn" style="display:none;">🗑️ 批量删除</button>
+            <button class="batch-delete-cancel" id="batchDeleteCancel">取消</button>
+            <button class="show-notice-btn" id="showNoticeBtn" style="display:none;">📢 显示公告</button>
+            <button class="auth-btn" id="authBtn">🔐 登录</button>
+        </div>
+
+        <div class="notice-area" id="noticeArea">
+            <div class="notice-icon">📢</div>
+            <div class="notice-content" id="noticeContent"><span class="placeholder">📌 暂无公告</span></div>
+            <div class="notice-actions" id="noticeActions"></div>
+        </div>
+
+        <div class="breadcrumb" id="breadcrumb"><span>📍</span><span class="crumb" data-id="0">根目录</span></div>
+
+        <div class="stats-bar">
+            <div class="stats-left">
+                <span>📄 共 <span class="num" id="fileCount">0</span> 项</span>
+                <span>📁 <span class="num" id="folderCount">0</span> 个文件夹</span>
+                <span>📄 <span class="num" id="fileTypeCount">0</span> 个文件</span>
+            </div>
+            <div class="filter-tabs" id="filterTabs">
+                <button class="tab active" data-filter="all">📌 全部</button>
+                <button class="tab" data-filter="表格">📊 表格</button>
+                <button class="tab" data-filter="文档">📝 Word</button>
+                <button class="tab" data-filter="图片">🖼️ 图片</button>
+                <button class="tab" data-filter="设计">🎨 设计</button>
+                <button class="tab" data-filter="PPT">📎 PPT</button>
+            </div>
+        </div>
+
+        <div class="file-grid" id="fileGrid"></div>
+        <div style="text-align:center; font-size:11px; color:#94a3b8; margin-top:20px; padding:10px 0;">
+            ⚡ 点击卡片预览 · 管理员可上传/删除 · 数据同步至中科院数据胶囊
+        </div>
+    </div>
+
+    <button class="contact-float-btn" id="contactFloatBtn">💬 乾园园丁</button>
+    <div id="toast" class="toast">✅ 操作成功</div>
+    <div id="uploadProgress" class="upload-progress">
+        <div id="uploadProgressText">⏳ 正在上传...</div>
+        <div class="bar"><div class="bar-inner" id="uploadProgressBar"></div></div>
+    </div>
+    <div class="modal-overlay" id="previewModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">✕ 关闭</button>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="upload-btn" id="modalDownloadBtn">⬇️ 下载此文件</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay auth-modal" id="authModal">
+        <div class="modal-content">
+            <button class="modal-close" id="authModalClose">✕ 关闭</button>
+            <div class="modal-body">
+                <div style="text-align:center; margin-bottom:14px;">
+                    <span style="font-size:44px;">🔐</span>
+                    <h3 style="margin-top:6px;">管理员登录</h3>
+                    <p style="color:#7a7f8a; font-size:13px;">请输入管理员密码</p>
+                </div>
+                <input type="password" id="authPassword" placeholder="密码">
+                <div class="auth-error" id="authError"></div>
+                <button class="upload-btn" id="authLoginBtn" style="width:100%; margin-top:10px;">登录</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay contact-modal" id="contactModal">
+        <div class="modal-content">
+            <button class="modal-close" id="contactModalClose">✕ 关闭</button>
+            <div class="modal-body">
+                <div style="font-size:22px; margin-bottom:6px;">📞</div>
+                <h3 style="margin-bottom:10px;">联系乾园园丁</h3>
+                <div class="contact-content" id="contactContent"></div>
+                <div id="contactEditArea" style="display:none; margin-top:10px;">
+                    <textarea class="contact-edit" id="contactEditInput" placeholder="输入联系方式"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="upload-btn secondary" id="contactEditBtn">✏️ 编辑</button>
+                <button class="upload-btn" id="contactSaveBtn" style="display:none;">💾 保存</button>
+                <button class="upload-btn secondary" id="contactCancelEditBtn" style="display:none;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ============================================================
+    //  数据胶囊 API 配置
+    // ============================================================
+    const API_BASE = 'http://localhost:3000/api';
+
+    // ============================================================
+    //  数据持久化
+    // ============================================================
+    const STORAGE_KEY = 'fileManagerData';
+    const NOTICE_PREFIX = 'notice_';
+    const CONTACT_KEY = 'contactInfo';
+    const APP_TITLE_KEY = 'appTitle';
+    const NOTICE_CLOSED_KEY = 'noticeClosed_';
+
+    function getDefaultData() {
+        const folderNames = [
+            '01 亚克力话筒牌制作', '02 课程视频及音乐', '03 讲师展架海报（必做）',
+            '04 会场指引展架（百鱼来朝）', '05 喷绘可选图案（参考图非原图）',
+            '06 投屏图片资料', '07 组别牌底图源文件', '08 荣誉证书模板',
+            '09 奖杯定制样式参考图（物料表1688有链接）',
+            '10 收款码（必须联系园丁报备位置）'
+        ];
+        const fileItems = [
+            { name: '11 精华班筹备目录.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '12 精华班流程表.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '13 精华班会场布局与物料清单.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '14 精华班物料总清单.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '15 学院发货物料申请表.docx', type: '文档', tag: 'Word', icon: '📝', ext: '.docx' },
+            { name: '16 开课酒店选择参考事项.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '17 主持稿参考模板.docx', type: '文档', tag: 'Word', icon: '📝', ext: '.docx' },
+            { name: '18 主持人开场ppt.pptx', type: 'PPT', tag: 'PPT', icon: '📎', ext: '.pptx' },
+            { name: '19 精华班现场产品一览表.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '20 精华班现场五行为好物一览表.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '21 学员签到模板.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '22 客户画像表模板.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '23 精华班各岗位职责和分工表.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '24 精华班积分表模板.xlsx', type: '表格', tag: 'Excel', icon: '📊', ext: '.xlsx' },
+            { name: '25 学生证空白源文件.jpg', type: '图片', tag: 'JPG', icon: '🖼️', ext: '.jpg' }
+        ];
+        const nodes = [];
+        let id = 1;
+        folderNames.forEach(name => {
+            nodes.push({ id: id++, parentId: 0, name, type: 'folder', icon: '📁' });
+        });
+        fileItems.forEach((item, index) => {
+            const fileId = id++;
+            nodes.push({
+                id: fileId, parentId: 0, name: item.name, type: 'file',
+                size: (0.5 + Math.random() * 8).toFixed(1) + ' MB',
+                date: new Date(Date.now() - (index * 86400000)).toISOString().slice(0, 10),
+                icon: item.icon, tag: item.tag, ext: item.ext,
+                fileKey: null, fileType: item.type
+            });
+        });
+        return nodes;
+    }
+
+    async function loadDataFromCapsule() {
+        try {
+            const response = await fetch(`${API_BASE}/data`);
+            const result = await response.json();
+            if (result.success && result.data && result.data.nodes) {
+                console.log('✅ 从数据胶囊加载成功，共 ' + result.data.nodes.length + ' 个节点');
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data.nodes));
+                return result.data.nodes;
+            }
+        } catch (e) {
+            console.warn('从数据胶囊加载失败，使用本地缓存', e);
+        }
+        return null;
+    }
+
+    function loadDataFromLocal() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try { return JSON.parse(stored); } catch (e) {}
+        }
+        const defaultData = getDefaultData();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
+        return defaultData;
+    }
+
+    function saveData(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        fetch(`${API_BASE}/data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: { nodes: data } })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) console.log('✅ 数据已同步到数据胶囊');
+        })
+        .catch(e => console.warn('数据胶囊同步失败', e));
+    }
+
+    function saveDataToLocalOnly(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    let nodes = loadDataFromLocal();
+    let nextId = nodes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+
+    function getChildren(folderId) { return nodes.filter(n => n.parentId === folderId); }
+    function getNode(id) { return nodes.find(n => n.id === id); }
+    function getPath(nodeId) {
+        const path = [];
+        let current = getNode(nodeId);
+        while (current && current.id !== 0) {
+            path.unshift(current);
+            current = getNode(current.parentId);
+        }
+        return path;
+    }
+    function addNode(node) { nodes.push(node); saveData(nodes); return node; }
+    function deleteNode(id) {
+        const toDelete = [id];
+        let index = 0;
+        while (index < toDelete.length) {
+            const currentId = toDelete[index];
+            const children = nodes.filter(n => n.parentId === currentId);
+            children.forEach(c => toDelete.push(c.id));
+            index++;
+        }
+        const deletedNodes = nodes.filter(n => toDelete.includes(n.id));
+        for (const n of deletedNodes) {
+            if (n.fileKey) {
+                fetch(`${API_BASE}/file/${n.fileKey}`, { method: 'DELETE' }).catch(() => {});
+            }
+        }
+        nodes = nodes.filter(n => !toDelete.includes(n.id));
+        saveData(nodes);
+    }
+    function generateId() { return nextId++; }
+    function getAllFilesUnderFolder(folderId) {
+        const items = getChildren(folderId);
+        let files = [];
+        for (const item of items) {
+            if (item.type === 'folder') files = files.concat(getAllFilesUnderFolder(item.id));
+            else files.push(item);
+        }
+        return files;
+    }
+    function getAllFiles() { return getAllFilesUnderFolder(0); }
+
+    function getFileUrl(item) {
+        if (item.fileKey) return `${API_BASE}/file/${item.fileKey}`;
+        if (item.downloadUrl && !item.downloadUrl.startsWith('blob:')) return item.downloadUrl;
+        return null;
+    }
+
+    async function uploadFileToCapsule(file, parentId) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('prefix', `files/folder_${parentId}`);
+        const response = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || '上传失败');
+        return result.key;
+    }
+
+    const ADMIN_PASSWORD = 'Ysqy4313！';
+    let isAdmin = false;
+
+    function checkAuth() {
+        isAdmin = sessionStorage.getItem('fileManagerAdmin') === 'true';
+        updateUIForAuth();
+    }
+    function login(password) {
+        if (password === ADMIN_PASSWORD) {
+            isAdmin = true;
+            sessionStorage.setItem('fileManagerAdmin', 'true');
+            updateUIForAuth();
+            showToast('✅ 管理员登录成功');
+            closeAuthModal();
+            render();
+            return true;
+        } else {
+            document.getElementById('authError').textContent = '❌ 密码错误，请重试';
+            return false;
+        }
+    }
+    function logout() {
+        isAdmin = false;
+        sessionStorage.removeItem('fileManagerAdmin');
+        updateUIForAuth();
+        showToast('已退出管理员模式');
+        render();
+    }
+    function updateUIForAuth() {
+        const badge = document.getElementById('roleBadge');
+        const authBtn = document.getElementById('authBtn');
+        const uploadGroup = document.getElementById('adminUploadGroup');
+        const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+        if (isAdmin) {
+            badge.textContent = '管理员';
+            badge.style.background = '#eef2ff';
+            badge.style.color = '#4a4a8a';
+            authBtn.textContent = '🚪 退出';
+            authBtn.className = 'auth-btn logout';
+            uploadGroup.style.display = 'flex';
+            batchDeleteBtn.style.display = 'inline-block';
+        } else {
+            badge.textContent = '访客';
+            badge.style.background = '#f1f4f9';
+            badge.style.color = '#64748b';
+            authBtn.textContent = '🔐 登录';
+            authBtn.className = 'auth-btn';
+            uploadGroup.style.display = 'none';
+            batchDeleteBtn.style.display = 'none';
+        }
+        renderNotice();
+    }
+
+    function showUploadProgress(text, percent) {
+        const el = document.getElementById('uploadProgress');
+        el.classList.add('show');
+        document.getElementById('uploadProgressText').textContent = text;
+        document.getElementById('uploadProgressBar').style.width = percent + '%';
+    }
+    function hideUploadProgress() {
+        document.getElementById('uploadProgress').classList.remove('show');
+    }
+
+    async function downloadFilesAsZip(files, zipName = '文件.zip') {
+        if (!files || files.length === 0) { showToast('⚠️ 没有文件可下载'); return; }
+        showToast('⏳ 正在打包，请稍候...');
+        const zip = new JSZip();
+        let success = 0;
+        for (const file of files) {
+            const path = getFilePath(file.id);
+            try {
+                const url = getFileUrl(file);
+                let data;
+                if (url) {
+                    try {
+                        const response = await fetch(url);
+                        if (response.ok) { data = await response.blob(); success++; }
+                        else throw new Error('fetch failed');
+                    } catch (e) {
+                        data = `[占位] ${file.name}`;
+                    }
+                } else {
+                    data = `[占位] ${file.name}（未上传到云端）`;
+                }
+                zip.file(path, data);
+            } catch (e) {
+                zip.file(path, `[错误] 无法打包`);
+            }
+        }
+        try {
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(zipBlob);
+            link.download = zipName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+            showToast(`✅ 打包完成，成功 ${success}/${files.length}`);
+        } catch (e) {
+            showToast('❌ 打包失败：' + e.message);
+        }
+    }
+    async function downloadAll() {
+        const allFiles = getAllFiles();
+        if (allFiles.length === 0) { showToast('⚠️ 没有文件可下载'); return; }
+        const zipName = `全部文件_${new Date().toISOString().slice(0,10)}.zip`;
+        await downloadFilesAsZip(allFiles, zipName);
+    }
+    async function downloadFolder(folderId) {
+        const folder = getNode(folderId);
+        if (!folder || folder.type !== 'folder') { showToast('⚠️ 无效的文件夹'); return; }
+        const files = getAllFilesUnderFolder(folderId);
+        if (files.length === 0) { showToast('⚠️ 该文件夹为空'); return; }
+        await downloadFilesAsZip(files, `${folder.name}.zip`);
+    }
+    function getFilePath(fileId) {
+        const node = getNode(fileId);
+        if (!node) return '';
+        const pathParts = [];
+        let current = node;
+        while (current && current.id !== 0) {
+            pathParts.unshift(current.name);
+            current = getNode(current.parentId);
+        }
+        return pathParts.join('/');
+    }
+    function handleDownload(file) {
+        if (!file) return;
+        const url = getFileUrl(file);
+        if (url) {
+            downloadFile(url, file.name);
+        } else {
+            const blob = generateDummyFile(file.ext || '.txt', file.name);
+            downloadFile(blob, file.name);
+        }
+    }
+    function downloadFile(urlOrBlob, filename) {
+        const link = document.createElement('a');
+        if (urlOrBlob instanceof Blob) link.href = URL.createObjectURL(urlOrBlob);
+        else link.href = urlOrBlob;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (urlOrBlob instanceof Blob) setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+        showToast(`⬇️ 下载：${filename}`);
+    }
+    function generateDummyFile(ext, filename) {
+        const content = `这是 "${filename}" 的占位内容。\n文件尚未上传到云端。`;
+        return new Blob([content], { type: 'text/plain;charset=utf-8' });
+    }
+
+    function handleDelete(id) {
+        if (!isAdmin) { showToast('⚠️ 需要管理员权限'); return; }
+        const node = getNode(id);
+        if (!node) return;
+        const typeLabel = node.type === 'folder' ? '文件夹' : '文件';
+        const childCount = node.type === 'folder' ? getChildren(id).length : 0;
+        let msg = `确定要删除${typeLabel} "${node.name}" 吗？`;
+        if (childCount > 0) msg += `\n该文件夹包含 ${childCount} 个子项，将一并删除。`;
+        msg += '\n此操作不可撤销。';
+        if (!confirm(msg)) return;
+        deleteNode(id);
+        render();
+        showToast(`🗑️ 已删除：${node.name}`);
+    }
+    let batchMode = false;
+    function toggleBatchMode() {
+        if (!isAdmin) { showToast('⚠️ 需要管理员权限'); return; }
+        batchMode = !batchMode;
+        const btn = document.getElementById('batchDeleteBtn');
+        const cancelBtn = document.getElementById('batchDeleteCancel');
+        const grid = document.getElementById('fileGrid');
+        if (batchMode) {
+            btn.textContent = '✅ 确认删除';
+            btn.classList.add('active');
+            cancelBtn.style.display = 'inline-block';
+            grid.classList.add('batch-mode');
+            showToast('☑️ 请勾选要删除的项目');
+        } else {
+            btn.textContent = '🗑️ 批量删除';
+            btn.classList.remove('active');
+            cancelBtn.style.display = 'none';
+            grid.classList.remove('batch-mode');
+            document.querySelectorAll('#fileGrid .file-card .checkbox-wrapper input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+    }
+    function executeBatchDelete() {
+        if (!batchMode) return;
+        const checkboxes = document.querySelectorAll('#fileGrid .file-card .checkbox-wrapper input[type="checkbox"]:checked');
+        if (checkboxes.length === 0) { showToast('⚠️ 请至少勾选一项'); return; }
+        const ids = [];
+        checkboxes.forEach(cb => {
+            const id = parseInt(cb.dataset.id);
+            if (!isNaN(id)) ids.push(id);
+        });
+        if (ids.length === 0) return;
+        if (!confirm(`确定要删除选中的 ${ids.length} 个项目吗？`)) return;
+        ids.sort((a, b) => b - a);
+        for (const id of ids) deleteNode(id);
+        batchMode = false;
+        const btn = document.getElementById('batchDeleteBtn');
+        const cancelBtn = document.getElementById('batchDeleteCancel');
+        btn.textContent = '🗑️ 批量删除';
+        btn.classList.remove('active');
+        cancelBtn.style.display = 'none';
+        document.getElementById('fileGrid').classList.remove('batch-mode');
+        render();
+        showToast(`🗑️ 已批量删除 ${ids.length} 个项目`);
+    }
+
+    function handleOpenFolder(id) {
+        const node = getNode(id);
+        if (!node || node.type !== 'folder') return;
+        currentFolderId = id;
+        render();
+    }
+    let currentPreviewNode = null;
+    function openPreview(node) {
+        if (!node || node.type !== 'file') { showToast('⚠️ 无法预览文件夹'); return; }
+        currentPreviewNode = node;
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = '';
+        const url = getFileUrl(node);
+        const ext = (node.ext || '').toLowerCase();
+        const isImage = ['jpg','jpeg','png','gif','webp','bmp','svg','ico'].includes(ext.replace('.', ''));
+        const isText = ['txt','csv','json','js','css','html','xml','md','log'].includes(ext.replace('.', ''));
+        if (isImage && url) {
+            modalBody.innerHTML = `<img src="${url}" alt="${node.name}" />`;
+            document.getElementById('modalDownloadBtn').onclick = function() {
+                if (currentPreviewNode) handleDownload(currentPreviewNode);
+            };
+            document.getElementById('previewModal').classList.add('active');
+            return;
+        } else if (isText && url) {
+            modalBody.innerHTML = `<div class="preview-info"><div class="big-icon">⏳</div><p style="color:#fff;">正在加载...</p></div>`;
+            fetch(url).then(res => res.text()).then(text => {
+                modalBody.innerHTML = `<div class="preview-text">${escapeHtml(text)}</div>`;
+            }).catch(() => {
+                modalBody.innerHTML = `<div class="preview-info"><div class="big-icon">📄</div><div class="filename" style="color:#fff;">${node.name}</div><p style="margin-top:8px; color:rgba(255,255,255,0.7);">无法预览，请下载查看。</p></div>`;
+            });
+            document.getElementById('modalDownloadBtn').onclick = function() {
+                if (currentPreviewNode) handleDownload(currentPreviewNode);
+            };
+            document.getElementById('previewModal').classList.add('active');
+            return;
+        } else {
+            modalBody.innerHTML = `<div class="preview-info"><div class="big-icon">${node.icon || '📄'}</div><div class="filename" style="color:#fff;">${node.name}</div><p style="margin-top:8px; color:rgba(255,255,255,0.7);">${url ? '此文件类型暂不支持预览。' : '文件尚未上传到云端。'}</p><p style="font-size:12px; color:rgba(255,255,255,0.5);">大小：${node.size || '—'} · 日期：${node.date || '—'}</p></div>`;
+        }
+        document.getElementById('modalDownloadBtn').onclick = function() {
+            if (currentPreviewNode) handleDownload(currentPreviewNode);
+        };
+        document.getElementById('previewModal').classList.add('active');
+    }
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    function closeModal() {
+        document.getElementById('previewModal').classList.remove('active');
+        document.getElementById('modalBody').innerHTML = '';
+        currentPreviewNode = null;
+        document.getElementById('modalDownloadBtn').onclick = null;
+    }
+
+    let noticeEditing = false;
+    function getNotice(folderId) { return localStorage.getItem(NOTICE_PREFIX + folderId) || ''; }
+    function setNotice(folderId, content) { localStorage.setItem(NOTICE_PREFIX + folderId, content); }
+    function isNoticeClosed(folderId) { return localStorage.getItem(NOTICE_CLOSED_KEY + folderId) === 'true'; }
+    function setNoticeClosed(folderId, closed) {
+        if (closed) localStorage.setItem(NOTICE_CLOSED_KEY + folderId, 'true');
+        else localStorage.removeItem(NOTICE_CLOSED_KEY + folderId);
+    }
+    function renderNotice() {
+        const area = document.getElementById('noticeArea');
+        const contentDiv = document.getElementById('noticeContent');
+        const actionsDiv = document.getElementById('noticeActions');
+        const folderId = currentFolderId;
+        const notice = getNotice(folderId);
+        const closed = isNoticeClosed(folderId);
+        if (closed && !isAdmin) {
+            area.classList.add('hidden');
+            document.getElementById('showNoticeBtn').style.display = 'inline-block';
+            return;
+        } else {
+            area.classList.remove('hidden');
+            document.getElementById('showNoticeBtn').style.display = 'none';
+        }
+        if (noticeEditing && isAdmin) {
+            contentDiv.innerHTML = '';
+            const editArea = document.createElement('div');
+            editArea.style.width = '100%';
+            const textarea = document.createElement('textarea');
+            textarea.className = 'notice-edit';
+            textarea.id = 'noticeEditTextarea';
+            textarea.value = notice;
+            textarea.placeholder = '输入公告内容...';
+            editArea.appendChild(textarea);
+            contentDiv.appendChild(editArea);
+            setTimeout(() => textarea.focus(), 50);
+            actionsDiv.innerHTML = '';
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'save-notice';
+            saveBtn.textContent = '💾 保存';
+            saveBtn.addEventListener('click', () => {
+                const val = document.getElementById('noticeEditTextarea').value;
+                saveNotice(val);
+            });
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '取消';
+            cancelBtn.addEventListener('click', cancelEditNotice);
+            actionsDiv.appendChild(saveBtn);
+            actionsDiv.appendChild(cancelBtn);
+            return;
+        }
+        if (notice.trim()) contentDiv.innerHTML = notice.replace(/\n/g, '<br>');
+        else contentDiv.innerHTML = '<span class="placeholder">📌 暂无公告</span>';
+        actionsDiv.innerHTML = '';
+        if (isAdmin) {
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✏️ 编辑公告';
+            editBtn.addEventListener('click', startEditNotice);
+            actionsDiv.appendChild(editBtn);
+        }
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-notice';
+        closeBtn.textContent = '✕';
+        closeBtn.title = '关闭公告';
+        closeBtn.addEventListener('click', () => {
+            setNoticeClosed(folderId, true);
+            renderNotice();
+        });
+        actionsDiv.appendChild(closeBtn);
+    }
+    function startEditNotice() { if (!isAdmin) return; noticeEditing = true; renderNotice(); }
+    function saveNotice(content) {
+        if (!isAdmin) return;
+        setNotice(currentFolderId, content);
+        noticeEditing = false;
+        renderNotice();
+        showToast('✅ 公告已更新');
+    }
+    function cancelEditNotice() { noticeEditing = false; renderNotice(); }
+    function showNotice() { setNoticeClosed(currentFolderId, false); renderNotice(); }
+
+    function getContactInfo() {
+        return localStorage.getItem(CONTACT_KEY) || '微信号：yuanzi_2025\n电话：138-0000-8888';
+    }
+    function setContactInfo(content) { localStorage.setItem(CONTACT_KEY, content); }
+    function renderContactModal() {
+        const contentDiv = document.getElementById('contactContent');
+        const info = getContactInfo();
+        if (info.trim()) contentDiv.innerHTML = info.replace(/\n/g, '<br>');
+        else contentDiv.innerHTML = '<span class="placeholder">暂无联系方式</span>';
+    }
+    function openContactModal() {
+        renderContactModal();
+        document.getElementById('contactModal').classList.add('active');
+        document.getElementById('contactEditArea').style.display = 'none';
+        document.getElementById('contactEditBtn').style.display = 'inline-block';
+        document.getElementById('contactSaveBtn').style.display = 'none';
+        document.getElementById('contactCancelEditBtn').style.display = 'none';
+        document.getElementById('contactEditInput').value = getContactInfo();
+    }
+    function closeContactModal() { document.getElementById('contactModal').classList.remove('active'); }
+    function startEditContact() {
+        if (!isAdmin) { showToast('⚠️ 需要管理员权限'); return; }
+        document.getElementById('contactEditArea').style.display = 'block';
+        document.getElementById('contactEditBtn').style.display = 'none';
+        document.getElementById('contactSaveBtn').style.display = 'inline-block';
+        document.getElementById('contactCancelEditBtn').style.display = 'inline-block';
+        document.getElementById('contactEditInput').value = getContactInfo();
+        document.getElementById('contactEditInput').focus();
+    }
+    function saveContact() {
+        if (!isAdmin) return;
+        setContactInfo(document.getElementById('contactEditInput').value);
+        renderContactModal();
+        showToast('✅ 联系方式已更新');
+        document.getElementById('contactEditArea').style.display = 'none';
+        document.getElementById('contactEditBtn').style.display = 'inline-block';
+        document.getElementById('contactSaveBtn').style.display = 'none';
+        document.getElementById('contactCancelEditBtn').style.display = 'none';
+    }
+    function cancelEditContact() {
+        document.getElementById('contactEditArea').style.display = 'none';
+        document.getElementById('contactEditBtn').style.display = 'inline-block';
+        document.getElementById('contactSaveBtn').style.display = 'none';
+        document.getElementById('contactCancelEditBtn').style.display = 'none';
+        renderContactModal();
+    }
+
+    function getAppTitle() { return localStorage.getItem(APP_TITLE_KEY) || '精华班会务系统'; }
+    function setAppTitle(title) {
+        localStorage.setItem(APP_TITLE_KEY, title);
+        document.getElementById('appTitle').textContent = title;
+        document.title = '📁 ' + title;
+    }
+    function promptEditTitle() {
+        if (!isAdmin) { showToast('⚠️ 需要管理员权限'); return; }
+        const newTitle = prompt('请输入新的名称：', getAppTitle());
+        if (newTitle && newTitle.trim() !== '') {
+            setAppTitle(newTitle.trim());
+            showToast('✅ 名称已更新');
+        }
+    }
+
+    let currentFolderId = 0;
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let isListView = false;
+
+    function render() {
+        let items = getChildren(currentFolderId);
+        if (searchQuery.trim() !== '') {
+            const q = searchQuery.trim().toLowerCase();
+            items = items.filter(item => item.name.toLowerCase().includes(q));
+        }
+        if (currentFilter !== 'all') {
+            items = items.filter(item => {
+                if (item.type === 'folder') return true;
+                return item.fileType === currentFilter;
+            });
+        }
+        items.sort((a, b) => {
+            if (a.type === 'folder' && b.type !== 'folder') return -1;
+            if (a.type !== 'folder' && b.type === 'folder') return 1;
+            return a.name.localeCompare(b.name);
+        });
+        const folders = items.filter(i => i.type === 'folder');
+        const files = items.filter(i => i.type === 'file');
+        document.getElementById('fileCount').textContent = items.length;
+        document.getElementById('folderCount').textContent = folders.length;
+        document.getElementById('fileTypeCount').textContent = files.length;
+        renderBreadcrumb();
+        renderNotice();
+        if (items.length === 0) {
+            document.getElementById('fileGrid').innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>当前目录为空</p><p style="font-size:14px; margin-top:6px;">点击「上传文件」或「上传文件夹」添加内容</p></div>`;
+            document.getElementById('fileGrid').className = 'file-grid' + (isListView ? ' list-view' : '');
+            return;
+        }
+        let html = '';
+        items.forEach(item => {
+            const isFolder = item.type === 'folder';
+            const cardClass = isFolder ? 'file-card folder-card' : 'file-card';
+            let thumbContent = '';
+            if (isFolder) thumbContent = `<span class="folder-icon">📁</span>`;
+            else {
+                const url = getFileUrl(item);
+                if (url && item.tag && ['JPG','PNG','GIF','WEBP','BMP'].includes(item.tag.toUpperCase())) {
+                    thumbContent = `<img src="${url}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.parentNode.innerHTML='<span class=\\'file-icon\\'>🖼️</span>';" />`;
+                } else {
+                    thumbContent = `<span class="file-icon">${item.icon || '📄'}</span>`;
+                }
+            }
+            const typeColor = {'表格':'#2d7d5e','文档':'#2b5c8a','图片':'#b45a3a','设计':'#8a4b7a','PPT':'#d97706'}[item.fileType] || '#6b7280';
+            let actionsHtml = '';
+            if (isFolder) {
+                actionsHtml = `<button class="open-folder" data-id="${item.id}">📂 打开</button><button class="folder-download" data-id="${item.id}">📥 下载</button>${isAdmin ? `<button class="delete" data-id="${item.id}">🗑️ 删除</button>` : ''}`;
+            } else {
+                actionsHtml = `<button class="download" data-id="${item.id}">⬇️ 下载</button>${isAdmin ? `<button class="delete" data-id="${item.id}">🗑️ 删除</button>` : ''}`;
+            }
+            const checkboxHtml = isAdmin ? `<div class="checkbox-wrapper"><input type="checkbox" data-id="${item.id}" /></div>` : '';
+            html += `<div class="${cardClass}" data-id="${item.id}" data-type="${item.type}">
+                ${checkboxHtml}
+                <div class="file-thumb">${thumbContent}</div>
+                <div class="file-name">${item.name}</div>
+                <div class="file-meta">${isFolder ? `<span>📁 文件夹</span>` : `<span>${item.size || '—'}</span><span>${item.date || '—'}</span><span class="tag" style="background:${typeColor}22; color:${typeColor};">${item.tag || '文件'}</span>`}</div>
+                <div class="file-actions">${actionsHtml}</div>
+            </div>`;
+        });
+        const grid = document.getElementById('fileGrid');
+        grid.innerHTML = html;
+        grid.className = 'file-grid' + (isListView ? ' list-view' : '');
+        if (batchMode) grid.classList.add('batch-mode');
+        grid.querySelectorAll('.download').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const node = getNode(parseInt(btn.dataset.id));
+                if (node) handleDownload(node);
+            });
+        });
+        grid.querySelectorAll('.folder-download').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                downloadFolder(parseInt(btn.dataset.id));
+            });
+        });
+        grid.querySelectorAll('.delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleDelete(parseInt(btn.dataset.id));
+            });
+        });
+        grid.querySelectorAll('.open-folder').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleOpenFolder(parseInt(btn.dataset.id));
+            });
+        });
+        grid.querySelectorAll('.file-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('button')) return;
+                if (e.target.closest('.checkbox-wrapper')) return;
+                const node = getNode(parseInt(this.dataset.id));
+                if (!node) return;
+                if (node.type === 'folder') handleOpenFolder(node.id);
+                else openPreview(node);
+            });
+        });
+    }
+
+    function renderBreadcrumb() {
+        const path = getPath(currentFolderId);
+        let html = `<span>📍</span><span class="crumb" data-id="0">根目录</span>`;
+        path.forEach((node, index) => {
+            const isLast = index === path.length - 1;
+            html += `<span>›</span><span class="crumb ${isLast ? 'current' : ''}" data-id="${node.id}">${node.name}</span>`;
+        });
+        document.getElementById('breadcrumb').innerHTML = html;
+        document.querySelectorAll('#breadcrumb .crumb:not(.current)').forEach(el => {
+            el.addEventListener('click', () => {
+                currentFolderId = parseInt(el.dataset.id);
+                render();
+            });
+        });
+    }
+
+    function detectFileType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        let fileType = '其他', icon = '📎', tag = '文件';
+        if (['xlsx','xls','csv'].includes(ext)) { fileType = '表格'; icon = '📊'; tag = 'Excel'; }
+        else if (['docx','doc'].includes(ext)) { fileType = '文档'; icon = '📝'; tag = 'Word'; }
+        else if (['jpg','jpeg','png','gif','webp','bmp','svg','ico'].includes(ext)) { fileType = '图片'; icon = '🖼️'; tag = ext.toUpperCase(); }
+        else if (['ai','psd','fig','sketch','xd'].includes(ext)) { fileType = '设计'; icon = '🎨'; tag = ext.toUpperCase(); }
+        else if (['ppt','pptx','pps','key'].includes(ext)) { fileType = 'PPT'; icon = '📎'; tag = 'PPT'; }
+        else { fileType = '其他'; icon = '📎'; tag = ext.toUpperCase() || '文件'; }
+        return { fileType, icon, tag, ext: '.' + ext };
+    }
+
+    async function processUploadedFiles(fileList) {
+        if (!isAdmin) { showToast('⚠️ 需要管理员权限'); return 0; }
+        if (!fileList || fileList.length === 0) return 0;
+        const total = fileList.length;
+        let added = 0, failed = 0;
+        showUploadProgress(`⏳ 正在上传 0/${total}...`, 0);
+        for (let i = 0; i < fileList.length; i++) {
+            const file = fileList[i];
+            const { fileType, icon, tag, ext } = detectFileType(file.name);
+            try {
+                const fileKey = await uploadFileToCapsule(file, currentFolderId);
+                addNode({
+                    id: generateId(), parentId: currentFolderId, name: file.name, type: 'file',
+                    fileType, size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+                    date: new Date().toISOString().slice(0, 10), icon, tag,
+                    ext, fileKey
+                });
+                added++;
+            } catch (e) {
+                console.error('上传失败:', file.name, e);
+                failed++;
+            }
+            showUploadProgress(`⏳ 正在上传 ${i+1}/${total}...`, Math.round((i+1)/total*100));
+        }
+        hideUploadProgress();
+        if (failed > 0) showToast(`✅ 成功 ${added} 个，❌ 失败 ${failed} 个`);
+        return added;
+    }
+
+    async function processUploadedFolder(fileList) {
+        if (!isAdmin) { showToast('⚠️ 需要管理员权限'); return 0; }
+        if (!fileList || fileList.length === 0) return 0;
+        let added = 0;
+        const pathSet = new Set();
+        for (const file of fileList) {
+            const relativePath = file.webkitRelativePath || file.name;
+            const parts = relativePath.split('/');
+            let currentPath = '';
+            for (let i = 0; i < parts.length - 1; i++) {
+                currentPath += (i > 0 ? '/' : '') + parts[i];
+                pathSet.add(currentPath);
+            }
+        }
+        const folderNodeMap = new Map();
+        for (const fullPath of pathSet) {
+            const parts = fullPath.split('/');
+            const folderName = parts[parts.length - 1];
+            const parentPath = parts.slice(0, -1).join('/');
+            let parentId = currentFolderId;
+            if (parentPath) {
+                const parentNode = folderNodeMap.get(parentPath);
+                if (parentNode) parentId = parentNode.id;
+            }
+            if (!folderNodeMap.get(fullPath)) {
+                const newNode = { id: generateId(), parentId, name: folderName, type: 'folder', icon: '📁' };
+                addNode(newNode);
+                folderNodeMap.set(fullPath, newNode);
+                added++;
+            }
+        }
+        const total = fileList.length;
+        let uploaded = 0, failed = 0;
+        showUploadProgress(`⏳ 正在上传 0/${total}...`, 0);
+        for (let i = 0; i < fileList.length; i++) {
+            const file = fileList[i];
+            const relativePath = file.webkitRelativePath || file.name;
+            const parts = relativePath.split('/');
+            const fileName = parts[parts.length - 1];
+            const folderPath = parts.slice(0, -1).join('/');
+            let parentId = currentFolderId;
+            if (folderPath) {
+                const folderNode = folderNodeMap.get(folderPath);
+                if (folderNode) parentId = folderNode.id;
+            }
+            const { fileType, icon, tag, ext } = detectFileType(fileName);
+            try {
+                const fileKey = await uploadFileToCapsule(file, parentId);
+                addNode({
+                    id: generateId(), parentId, name: fileName, type: 'file',
+                    fileType, size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+                    date: new Date().toISOString().slice(0, 10), icon, tag,
+                    ext, fileKey
+                });
+                uploaded++;
+            } catch (e) {
+                console.error('上传失败:', fileName, e);
+                failed++;
+            }
+            showUploadProgress(`⏳ 正在上传 ${i+1}/${total}...`, Math.round((i+1)/total*100));
+        }
+        hideUploadProgress();
+        added += uploaded;
+        if (failed > 0) showToast(`✅ 上传 ${uploaded} 个，❌ 失败 ${failed} 个`);
+        return added;
+    }
+
+    window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY) {
+            nodes = loadDataFromLocal();
+            nextId = nodes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+            render();
+            showToast('🔄 数据已同步');
+        }
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        render();
+    });
+    document.getElementById('filterTabs').addEventListener('click', (e) => {
+        const tab = e.target.closest('.tab');
+        if (!tab) return;
+        document.querySelectorAll('#filterTabs .tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFilter = tab.dataset.filter;
+        render();
+    });
+    document.getElementById('gridViewBtn').addEventListener('click', () => {
+        isListView = false;
+        document.getElementById('gridViewBtn').classList.add('active');
+        document.getElementById('listViewBtn').classList.remove('active');
+        render();
+    });
+    document.getElementById('listViewBtn').addEventListener('click', () => {
+        isListView = true;
+        document.getElementById('listViewBtn').classList.add('active');
+        document.getElementById('gridViewBtn').classList.remove('active');
+        render();
+    });
+    document.getElementById('fileUpload').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        e.target.value = '';
+        if (files.length === 0) return;
+        const added = await processUploadedFiles(files);
+        if (added > 0) { showToast(`✅ 成功上传 ${added} 个文件`); render(); }
+    });
+    document.getElementById('folderUpload').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        e.target.value = '';
+        if (files.length === 0) return;
+        const added = await processUploadedFolder(files);
+        if (added > 0) { showToast(`✅ 成功上传 ${added} 个项目`); render(); }
+    });
+    document.getElementById('downloadAllBtn').addEventListener('click', downloadAll);
+    document.getElementById('batchDeleteBtn').addEventListener('click', function() {
+        if (batchMode) executeBatchDelete();
+        else toggleBatchMode();
+    });
+    document.getElementById('batchDeleteCancel').addEventListener('click', () => {
+        if (batchMode) toggleBatchMode();
+    });
+    document.getElementById('showNoticeBtn').addEventListener('click', showNotice);
+    document.getElementById('authBtn').addEventListener('click', () => {
+        if (isAdmin) logout(); else openAuthModal();
+    });
+    function openAuthModal() {
+        document.getElementById('authModal').classList.add('active');
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authError').textContent = '';
+        document.getElementById('authPassword').focus();
+    }
+    function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
+    document.getElementById('authModalClose').addEventListener('click', closeAuthModal);
+    document.getElementById('authModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeAuthModal();
+    });
+    document.getElementById('authLoginBtn').addEventListener('click', () => {
+        login(document.getElementById('authPassword').value);
+    });
+    document.getElementById('authPassword').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('authLoginBtn').click();
+    });
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('previewModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeModal();
+    });
+    document.getElementById('contactFloatBtn').addEventListener('click', openContactModal);
+    document.getElementById('contactModalClose').addEventListener('click', closeContactModal);
+    document.getElementById('contactModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeContactModal();
+    });
+    document.getElementById('contactEditBtn').addEventListener('click', startEditContact);
+    document.getElementById('contactSaveBtn').addEventListener('click', saveContact);
+    document.getElementById('contactCancelEditBtn').addEventListener('click', cancelEditContact);
+    document.getElementById('appTitle').addEventListener('click', promptEditTitle);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (document.getElementById('previewModal').classList.contains('active')) closeModal();
+            else if (document.getElementById('authModal').classList.contains('active')) closeAuthModal();
+            else if (document.getElementById('contactModal').classList.contains('active')) closeContactModal();
+            else {
+                document.getElementById('searchInput').value = '';
+                searchQuery = '';
+                render();
+                document.getElementById('searchInput').blur();
+            }
+        }
+    });
+
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    async function initApp() {
+        checkAuth();
+        document.getElementById('appTitle').textContent = getAppTitle();
+        document.title = '📁 ' + getAppTitle();
+        const capsuleNodes = await loadDataFromCapsule();
+        if (capsuleNodes && capsuleNodes.length > 0) {
+            nodes = capsuleNodes;
+            nextId = nodes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+            saveDataToLocalOnly(nodes);
+            console.log('✅ 已从数据胶囊同步 ' + nodes.length + ' 个节点');
+        } else {
+            console.log('📁 使用本地数据，共 ' + nodes.length + ' 个节点');
+        }
+        render();
+        console.log('📁 精华班会务系统已启动（数据胶囊同步版），共 ' + nodes.length + ' 个节点');
+    }
+
+    initApp();
+    </script>
+</body>
+</html>
